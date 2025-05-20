@@ -1,33 +1,71 @@
-# Variables
-IMAGE_NAME=ib-gateway
-PLATFORM=linux/amd64
-AWS_REGION=us-east-1
-AWS_ACCOUNT_ID=818079790045
-ECR_REPO=$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME)
-BUILD_CONTEXT=latest
+# Variables principales
+IMAGE_NAME=ib-gateway-local
+DOCKERFILE=stable/Dockerfile
+CONTEXT=stable
+CONTAINER_NAME=ib-gateway
+PORT=4002
+COMPOSE_FILE=docker-compose.yml
 
-.PHONY: build push login ecr-tag deploy
+.PHONY: build run stop clean logs shell compose-up compose-down compose-logs purge show-dirs
 
-# 1. Construir la imagen localmente
+## Build la imagen local usando el Dockerfile en stable/
 build:
-	@echo "🐳 Construyendo imagen Docker para $(IMAGE_NAME)..."
-	docker buildx build --platform=$(PLATFORM) -t $(IMAGE_NAME):latest ./$(BUILD_CONTEXT) --load
+	@echo "🔨 Construyendo imagen Docker desde $(DOCKERFILE)..."
+	docker buildx build --platform=linux/amd64 -t $(IMAGE_NAME) -f $(DOCKERFILE) $(CONTEXT)
 
-# 2. Login en Amazon ECR
-login:
-	@echo "🔐 Login en Amazon ECR..."
-	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
 
-# 3. Etiquetar imagen para ECR
-ecr-tag:
-	@echo "🏷️ Etiquetando imagen para ECR como $(ECR_REPO):latest..."
-	docker tag $(IMAGE_NAME):latest $(ECR_REPO):latest
+## Ejecuta el contenedor en modo local (detached)
+run: stop
+	@echo "🚀 Ejecutando contenedor en el puerto $(PORT)..."
+	docker run -d --rm \
+		--name $(CONTAINER_NAME) \
+		-p 127.0.0.1:$(PORT):$(PORT) \
+		-e TWS_USERID=andresco2024 \
+		-e TWS_PASSWORD=1nt3r4ct1v3+2024 \
+		-e TRADING_MODE=paper \
+		-e READ_ONLY_API=no \
+		-e TWOFA_TIMEOUT_ACTION=restart \
+		-e RELOGIN_AFTER_2FA_TIMEOUT=yes \
+		-e TIME_ZONE=America/Bogota \
+		-e IB_GATEWAY_RELEASE_CHANNEL=stable \
+		$(IMAGE_NAME)
 
-# 4. Hacer push a ECR
-push:
-	@echo "📤 Subiendo imagen a ECR..."
-	docker push $(ECR_REPO):latest
+## Detiene el contenedor (si está corriendo)
+stop:
+	@echo "🛑 Deteniendo y eliminando contenedor si existe..."
+	-@docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
 
-# 5. Flujo completo
-deploy: build login ecr-tag push
-	@echo "✅ Imagen subida correctamente a $(ECR_REPO):latest"
+## Elimina la imagen local
+clean: stop
+	@echo "🧹 Eliminando imagen local..."
+	-@docker rmi $(IMAGE_NAME) 2>/dev/null || true
+
+## Muestra los logs del contenedor en tiempo real
+logs:
+	docker logs -f $(CONTAINER_NAME)
+
+## Abre una shell interactiva dentro del contenedor
+shell:
+	docker exec -it $(CONTAINER_NAME) /bin/bash
+
+## Ejecuta docker-compose con el archivo por defecto (en la raíz)
+compose-up:
+	docker-compose -f $(COMPOSE_FILE) up --build -d
+
+compose-down:
+	docker-compose -f $(COMPOSE_FILE) down
+
+compose-logs:
+	docker-compose -f $(COMPOSE_FILE) logs -f
+
+## Limpiar todo: contenedor, imagen y docker-compose
+purge: compose-down clean
+
+# Atajos útiles para desarrollo
+show-dirs:
+	@echo "Archivos de configuración:"
+	@ls -lh stable/config/ibc/config.ini.tmpl
+	@ls -lh stable/config/ibgateway/jts.ini.tmpl
+	@echo "Scripts disponibles:"
+	@ls -lh scripts/ || true
+	@ls -lh tws-scripts/ || true

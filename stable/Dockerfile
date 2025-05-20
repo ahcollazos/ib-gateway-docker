@@ -17,19 +17,30 @@ WORKDIR /tmp/setup
 # Prepare system
 RUN apt-get update -y && \
   DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --yes \
-  curl \
-  ca-certificates \
-  unzip && \
-  apt-get clean && \
+    curl \
+    ca-certificates \
+    unzip \
+    xvfb \
+    x11-utils \
+    libxext6 \
+    libxrender1 \
+    libxtst6 \
+    nano \
+    net-tools \
+    iproute2 \
+    python3-venv \
+    telnet \
+    netcat-openbsd \
+  && apt-get clean && \
   rm -rf /var/lib/apt/lists/* && \
-# Install IB Gateway
-# Use this instead of "RUN curl .." to install a local file:
-#COPY ibgateway-${IB_GATEWAY_VERSION}-standalone-linux-x64.sh .
+ \
+  # Install IB Gateway
   curl -sSOL https://github.com/gnzsnz/ib-gateway-docker/releases/download/ibgateway-${IB_GATEWAY_RELEASE_CHANNEL}%40${IB_GATEWAY_VERSION}/ibgateway-${IB_GATEWAY_VERSION}-standalone-linux-x64.sh && \
   curl -sSOL https://github.com/gnzsnz/ib-gateway-docker/releases/download/ibgateway-${IB_GATEWAY_RELEASE_CHANNEL}%40${IB_GATEWAY_VERSION}/ibgateway-${IB_GATEWAY_VERSION}-standalone-linux-x64.sh.sha256 && \
   sha256sum --check ./ibgateway-${IB_GATEWAY_VERSION}-standalone-linux-x64.sh.sha256 && \
   chmod a+x ./ibgateway-${IB_GATEWAY_VERSION}-standalone-linux-x64.sh && \
-  ./ibgateway-${IB_GATEWAY_VERSION}-standalone-linux-x64.sh -q -dir /root/Jts/ibgateway/${IB_GATEWAY_VERSION} &&\
+  ./ibgateway-${IB_GATEWAY_VERSION}-standalone-linux-x64.sh -q -dir /root/Jts/ibgateway/${IB_GATEWAY_VERSION} && \
+  \
   # Install IBC
   curl -sSOL https://github.com/IbcAlpha/IBC/releases/download/${IBC_VERSION}/IBCLinux-${IBC_VERSION}.zip && \
   mkdir /root/ibc && \
@@ -51,8 +62,8 @@ FROM ubuntu:24.04
 
 ENV IB_GATEWAY_VERSION=10.30.1v
 # IB Gateway user constants
-ARG USER_ID="${USER_ID:-1000}"
-ARG USER_GID="${USER_GID:-1000}"
+ARG USER_ID="1000"
+ARG USER_GID="1000"
 # IBC env vars
 ENV HOME=/home/ibgateway
 ENV TWS_MAJOR_VRSN=${IB_GATEWAY_VERSION}
@@ -72,7 +83,8 @@ COPY --chown=${USER_ID}:${USER_GID} --from=setup /root/ ${HOME}
 RUN apt-get update -y && \
   apt-get upgrade -y && \
   DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --yes \
-  gettext-base socat xvfb x11vnc sshpass openssh-client && \
+  gettext-base socat xvfb x11vnc sshpass openssh-client \
+  net-tools inetutils-telnet nano python3-venv && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/* && \
   if id ubuntu; then \
@@ -81,6 +93,7 @@ RUN apt-get update -y && \
   groupadd --gid ${USER_GID} ibgateway && \
   useradd -ms /bin/bash --uid ${USER_ID} --gid ${USER_GID} ibgateway && \
   chmod a+x ${SCRIPT_PATH}/*.sh
+
 
 USER ${USER_ID}:${USER_GID}
 WORKDIR ${HOME}
@@ -92,4 +105,4 @@ LABEL org.opencontainers.image.source=https://github.com/gnzsnz/ib-gateway-docke
 LABEL org.opencontainers.image.url=https://github.com/gnzsnz/ib-gateway-docker/pkgs/container/ib-gateway
 LABEL org.opencontainers.image.description="Docker image with IB Gateway and IBC "
 LABEL org.opencontainers.image.licenses="Apache License Version 2.0"
-LABEL org.opencontainers.image.version=${IB_GATEWAY_VERSION}-${IB_GATEWAY_RELEASE_CHANNEL}
+LABEL org.opencontainers.image.version=${IB_GATEWAY_VERSION}-stable

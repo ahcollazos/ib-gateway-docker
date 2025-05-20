@@ -1,16 +1,11 @@
-name: algo-trader
-
-
 services:
   ib-gateway:
     restart: always
     platform: linux/amd64  # <── mueve esta línea aquí
     build:
-      context: ./latest
+      context: ./stable
       dockerfile: Dockerfile
-      tags:
-        - "ghcr.io/gnzsnz/ib-gateway:latest"
-    image: ghcr.io/gnzsnz/ib-gateway:latest
+    image: ghcr.io/gnzsnz/ib-gateway:stable
     environment:
       TWS_USERID: ${TWS_USERID}
       TWS_PASSWORD: ${TWS_PASSWORD}
@@ -51,6 +46,5 @@ services:
     #      - ${PWD}/tws_settings/:${TWS_SETTINGS_PATH:-/home/ibgateway/Jts}
     #      - ${PWD}/ssh/:/home/ibgateway/.ssh
     ports:
-      - "127.0.0.1:4001:4003"
-      - "127.0.0.1:4002:4004"
+      - "127.0.0.1:4002:4002"
       - "127.0.0.1:5900:5900"

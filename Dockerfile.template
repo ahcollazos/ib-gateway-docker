@@ -9,7 +9,7 @@
 FROM ubuntu:24.04 AS setup
 
 ENV IB_GATEWAY_VERSION=$VERSION
-ENV IB_GATEWAY_RELEASE_CHANNEL=$CHANNEL
+ENV IB_GATEWAY_RELEASE_CHANNEL=stable
 ENV IBC_VERSION=3.22.0
 
 WORKDIR /tmp/setup
@@ -56,6 +56,7 @@ ARG USER_GID="${USER_GID:-1000}"
 # IBC env vars
 ENV HOME=/home/ibgateway
 ENV TWS_MAJOR_VRSN=${IB_GATEWAY_VERSION}
+ENV IB_GATEWAY_RELEASE_CHANNEL=${IB_GATEWAY_RELEASE_CHANNEL}
 ENV TWS_PATH=${HOME}/Jts
 ENV TWS_INI=jts.ini
 ENV TWS_INI_TMPL=${TWS_INI}.tmpl
@@ -72,7 +73,8 @@ COPY --chown=${USER_ID}:${USER_GID} --from=setup /root/ ${HOME}
 RUN apt-get update -y && \
   apt-get upgrade -y && \
   DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --yes \
-  gettext-base socat xvfb x11vnc sshpass openssh-client && \
+  gettext-base socat xvfb x11vnc sshpass openssh-client \
+  net-tools inetutils-telnet nano python3-venv && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/* && \
   if id ubuntu; then \
@@ -92,4 +94,4 @@ LABEL org.opencontainers.image.source=https://github.com/gnzsnz/ib-gateway-docke
 LABEL org.opencontainers.image.url=https://github.com/gnzsnz/ib-gateway-docker/pkgs/container/ib-gateway
 LABEL org.opencontainers.image.description="Docker image with IB Gateway and IBC "
 LABEL org.opencontainers.image.licenses="Apache License Version 2.0"
-LABEL org.opencontainers.image.version=${IB_GATEWAY_VERSION}-${IB_GATEWAY_RELEASE_CHANNEL}
+LABEL org.opencontainers.image.version=${IB_GATEWAY_VERSION}-stable

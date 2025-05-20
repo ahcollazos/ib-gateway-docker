@@ -1,0 +1,81 @@
+# Variables
+IMAGE_NAME=ib-gateway
+PLATFORM=linux/amd64
+BUILD_CONTEXT=stable
+
+# Variables de usuario (UID/GID del sistema host)
+USER_ID=1000
+USER_GID=1000
+
+# AWS config (para ECR)
+AWS_REGION=us-east-1
+AWS_ACCOUNT_ID=818079790045
+ECR_REPO=$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME)
+
+.PHONY: build login ecr-tag push deploy local-run local-stop local-logs local-clean
+
+# 1. Construir la imagen localmente
+build:
+	@echo "🐳 Construyendo imagen Docker para $(IMAGE_NAME)..."
+	docker buildx build --platform=$(PLATFORM) -t $(IMAGE_NAME):stable ./$(BUILD_CONTEXT) --load
+
+build:
+	@echo "🐳 Construyendo imagen Docker para $(IMAGE_NAME)..."
+	docker buildx build \
+	  --platform=$(PLATFORM) \
+	  --build-arg USER_ID=$(USER_ID) \
+	  --build-arg USER_GID=$(USER_GID) \
+	  --build-arg IB_GATEWAY_RELEASE_CHANNEL=stable \
+	  -t $(IMAGE_NAME):stable ./$(BUILD_CONTEXT) --load
+
+
+
+# 2. Login en Amazon ECR
+login:
+	@echo "🔐 Login en Amazon ECR..."
+	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+
+# 3. Etiquetar imagen para ECR
+ecr-tag:
+	@echo "🏷️ Etiquetando imagen para ECR como $(ECR_REPO):latest..."
+	docker tag $(IMAGE_NAME):latest $(ECR_REPO):latest
+
+# 4. Subir imagen a ECR
+push:
+	@echo "📤 Subiendo imagen a ECR..."
+	docker push $(ECR_REPO):latest
+
+# 5. Flujo completo para nube
+deploy: build login ecr-tag push
+	@echo "✅ Imagen subida correctamente a $(ECR_REPO):latest"
+
+# 6. Ejecutar contenedor localmente
+local: build
+	@echo "🧹 Eliminando contenedor existente si está corriendo..."
+	@docker rm -f ib-gateway 2>/dev/null || true
+	@echo "🚀 Ejecutando contenedor ib-gateway en modo local en el puerto 4002..."
+	docker run -d \
+	  -p 4002:4002 \
+	  --restart always \
+	  --name ib-gateway \
+	  -e DISPLAY=:0 \
+	  -e TRADING_MODE=paper \
+	  -e TWS_USERID=andresco2024 \
+	  -e TWS_PASSWORD=1nt3r4ct1v3+2024 \
+	  -e READ_ONLY_API=no \
+	  -e TWOFA_TIMEOUT_ACTION=restart \
+	  -e RELOGIN_AFTER_TWOFA_TIMEOUT=yes \
+	  -e TIME_ZONE=America/Bogota \
+	  -e IB_GATEWAY_RELEASE_CHANNEL=stable \
+	  ib-gateway:stable
+
+
+# 7. Ver logs del contenedor local
+local-logs:
+	@echo "📜 Mostrando logs del contenedor..."
+	docker logs -f $(IMAGE_NAME)
+
+# 8. Parar el contenedor local
+local-stop:
+	@echo "🛑 Parando contenedor..."
+	docker stop $(IMAGE_NAME)
