@@ -5,3 +5,6 @@ ssh/
 .python-version
 /*_password.txt
 /pass/*
+.DS_Store
+/.logs
+/.log

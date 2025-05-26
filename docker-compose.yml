@@ -1,7 +1,7 @@
 services:
   ib-gateway:
     restart: always
-    platform: linux/amd64  # <── mueve esta línea aquí
+    platform: linux/amd64
     build:
       context: ./stable
       dockerfile: Dockerfile
@@ -46,5 +46,5 @@ services:
     #      - ${PWD}/tws_settings/:${TWS_SETTINGS_PATH:-/home/ibgateway/Jts}
     #      - ${PWD}/ssh/:/home/ibgateway/.ssh
     ports:
-      - "127.0.0.1:4002:4002"
-      - "127.0.0.1:5900:5900"
+      - "4002:4002"
+      - "5900:5900"
