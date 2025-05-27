@@ -1,0 +1,1 @@
+docker exec -u root -it ib-gateway-docker-ib-gateway-1 bash

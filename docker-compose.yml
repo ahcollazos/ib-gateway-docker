@@ -40,6 +40,7 @@ services:
       SSH_USER_TUNNEL: ${SSH_USER_TUNNEL:-}
       SSH_RESTART: ${SSH_RESTART:-}
       SSH_VNC_PORT: ${SSH_VNC_PORT:-}
+      API_PORT: 4002
     #    volumes:
     #      - ${PWD}/jts.ini:/home/ibgateway/Jts/jts.ini
     #      - ${PWD}/config.ini:/home/ibgateway/ibc/config.ini

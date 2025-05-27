@@ -1,21 +1,13 @@
-# Variables principales
-IMAGE_NAME=ib-gateway-local
-DOCKERFILE=stable/Dockerfile
-CONTEXT=stable
-CONTAINER_NAME=ib-gateway
-PORT=4002
-COMPOSE_FILE=docker-compose.yml
-
 .PHONY: compose-up compose-down compose-logs purge show-dirs
 
 compose-up:
-	docker compose -f $(COMPOSE_FILE) up --build -d
+	docker compose -f docker-compose.yml up --build -d
 
 compose-down:
-	docker compose -f $(COMPOSE_FILE) down
+	docker compose -f docker-compose.yml down
 
 compose-logs:
-	docker compose -f $(COMPOSE_FILE) logs -f
+	docker compose -f docker-compose.yml logs -f
 
 purge: compose-down
 	docker system prune -af

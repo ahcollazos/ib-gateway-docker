@@ -66,6 +66,8 @@ start_vnc() {
 }
 
 start_IBC() {
+	export API_PORT=4002
+
 	echo ".> Starting IBC in ${TRADING_MODE} mode, with params:"
 	echo ".>		Version: ${TWS_MAJOR_VRSN}"
 	echo ".>		program: ${IBC_COMMAND:-gateway}"
@@ -88,11 +90,11 @@ start_IBC() {
 
 start_process() {
 	# set API and socat ports
-	set_ports
+	# set_ports # <-- comment (1/2)
 	# apply settings
 	apply_settings
 	# forward ports, socat/ssh
-	port_forwarding
+	# port_forwarding # <-- comment (1/2)
 
 	start_IBC
 }
