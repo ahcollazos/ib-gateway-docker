@@ -90,11 +90,11 @@ start_IBC() {
 
 start_process() {
 	# set API and socat ports
-	# set_ports # <-- comment (1/2)
+	set_ports # <-- comment (1/2)
 	# apply settings
 	apply_settings
 	# forward ports, socat/ssh
-	# port_forwarding # <-- comment (1/2)
+	port_forwarding # <-- comment (1/2)
 
 	start_IBC
 }
